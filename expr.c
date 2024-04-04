@@ -3,6 +3,10 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+// 错误处理
+#define ERR_DIV_BY_ZERO "Division by zero encountered!"
+#define ERR_INVALID_OP "Invalid operator encountered!"
+
 double expr_parse_term(const char **str);
 typedef enum {
     TOK_NUM,
@@ -82,55 +86,54 @@ double expr_parse_factor(char **str) {
     }
 }
 
-/**
- * 解析项
- * 该函数用于解析数学表达式中的一个项，支持乘法和除法运算。
- * 
- * @param str 指向当前解析字符串的指针的地址，函数会更新这个指针指向下一个待解析的字符。
- * @return 返回解析出的项的值。
- */
-double expr(char **str) {
-    // 解析第一个因子
-    double left = expr_parse_factor(str);
-    expr_Token tok;
 
-    // 循环处理乘法和除法运算，直到遇到其他类型的运算符
-    while ((tok = expr_scan_token(str)).type == TOK_MUL || tok.type == TOK_DIV|| tok.type == TOK_ADD || tok.type == TOK_SUB ) {
-        // 解析右侧的因子
-        double right = expr_parse_factor(str);
+
+
+double expr(char **str) {
+    double result = expr_parse_factor(str);
+
+    // 处理乘除运算
+    expr_Token tok;
+    while ((tok = expr_scan_token(str)).type == TOK_MUL || tok.type == TOK_DIV) {
+        double operand = expr_parse_factor(str);
         switch (tok.type) {
             case TOK_MUL:
-                // 执行乘法运算
-                left *= right;
+                result *= operand;
                 break;
             case TOK_DIV:
-                // 执行除法运算，检查除数是否为零
-                if (right == 0.0) {
-                    fprintf(stderr, "Division by zero encountered!\n");
-                    exit(EXIT_FAILURE);
+                if (operand == 0.0) {
+                    fprintf(stderr, ERR_DIV_BY_ZERO "\n");
+                    return -1;
                 }
-                left /= right;
+                result /= operand;
                 break;
-            case TOK_ADD:
-                left += right;
-                break;
-            case TOK_SUB:
-                left -= right;
-                break;
-    
-    
             default:
-                // 应该不会发生，如果发生则退出程序
-                exit(EXIT_FAILURE);
+                fprintf(stderr, ERR_INVALID_OP "\n");
+                return -1;
         }
     }
-    //printf("left=%f\n",left);
-    // 返回解析后的值
-    //printf("left=%f\n",left);
-    return left;
+
+    // 回退最后一个扫描的乘除运算符，以便接下来处理加减运算
+    (*str)--;
+
+    // 处理加减运算
+    while ((tok = expr_scan_token(str)).type == TOK_ADD || tok.type == TOK_SUB) {
+        double operand = expr_parse_factor(str);
+        switch (tok.type) {
+            case TOK_ADD:
+                result += operand;
+                break;
+            case TOK_SUB:
+                result -= operand;
+                break;
+            default:
+                fprintf(stderr, ERR_INVALID_OP "\n");
+                return -1;
+        }
+    }
+
+    return result;
 }
-
-
 /**
 int main() {
     const char *input = "1+3*2";  // Example input string
