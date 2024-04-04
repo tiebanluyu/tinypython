@@ -1,14 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-typedef struct {
-    int type;
+#include "expr.c"
 
 
-} Pyobj;
-// 假设只处理整数表达式，计算其值
-int evaluate_expression(const char *expr) {
-    int value;
+double evaluate_expression(const char *expr) {
+    double value;
     if (sscanf(expr, "%d", &value) == 1) {
         return value;
     }
@@ -16,11 +13,13 @@ int evaluate_expression(const char *expr) {
     exit(EXIT_FAILURE);
 }
 
-void execute_command(const char *command, const char **args) {
+void execute_command(char *command, char **args) {
     if (strcmp(command, "print") == 0) {
+        
         if (args[0] != NULL) {
-            int value = evaluate_expression(args[0]);
-            printf("%d\n", value);
+            
+            double value = expr(&args[0]);
+            printf("%f\n", value);
         } else {
             fprintf(stderr, "Missing argument for print command\n");
             exit(EXIT_FAILURE);
@@ -51,3 +50,4 @@ int main() {
 
     return 0;
 }
+

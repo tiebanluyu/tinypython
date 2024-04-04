@@ -3,7 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
-double parse_term(const char **str);
+double expr_parse_term(const char **str);
 typedef enum {
     TOK_NUM,
     TOK_ADD,
@@ -11,14 +11,14 @@ typedef enum {
     TOK_MUL,
     TOK_DIV,
     TOK_INVALID
-} TokenType;
+} expr_TokenType;
 
 typedef struct {
-    TokenType type;
+    expr_TokenType type;
     union {
         double num_val;
     };
-} Token;
+} expr_Token;
 
 
 /**
@@ -38,8 +38,8 @@ typedef struct {
  * @param str 指向要扫描的字符串的指针的地址。函数会更新该指针，使其指向扫描过的位置。
  * @return 返回一个Token结构体，包含了扫描到的标记类型和对应的值。
  */
-Token scan_token(const char **str) {
-    Token tok = {TOK_INVALID}; // 初始化一个无效的Token
+expr_Token expr_scan_token(char **str) {
+    expr_Token tok = {TOK_INVALID}; // 初始化一个无效的Token
 
     // 跳过输入字符串前的空格
     while (**str && isspace(**str)) {
@@ -68,8 +68,8 @@ Token scan_token(const char **str) {
     return tok; // 返回生成的Token
 }
 
-double parse_factor(const char **str) {
-    Token tok = scan_token(str); // 扫描并获取第一个标记
+double expr_parse_factor(char **str) {
+    expr_Token tok = expr_scan_token(str); // 扫描并获取第一个标记
 
     if (tok.type == TOK_NUM) {
         // 如果标记为数字类型，返回该数字的值
@@ -89,15 +89,15 @@ double parse_factor(const char **str) {
  * @param str 指向当前解析字符串的指针的地址，函数会更新这个指针指向下一个待解析的字符。
  * @return 返回解析出的项的值。
  */
-double parse_term(const char **str) {
+double expr(char **str) {
     // 解析第一个因子
-    double left = parse_factor(str);
-    Token tok;
+    double left = expr_parse_factor(str);
+    expr_Token tok;
 
     // 循环处理乘法和除法运算，直到遇到其他类型的运算符
-    while ((tok = scan_token(str)).type == TOK_MUL || tok.type == TOK_DIV|| tok.type == TOK_ADD || tok.type == TOK_SUB ) {
+    while ((tok = expr_scan_token(str)).type == TOK_MUL || tok.type == TOK_DIV|| tok.type == TOK_ADD || tok.type == TOK_SUB ) {
         // 解析右侧的因子
-        double right = parse_factor(str);
+        double right = expr_parse_factor(str);
         switch (tok.type) {
             case TOK_MUL:
                 // 执行乘法运算
@@ -126,15 +126,16 @@ double parse_term(const char **str) {
     }
     //printf("left=%f\n",left);
     // 返回解析后的值
+    //printf("left=%f\n",left);
     return left;
 }
 
 
-
+/**
 int main() {
-    const char *input = "13+17";  // Example input string
+    const char *input = "1+3*2";  // Example input string
 
-    double result = parse_term(&input);
+    double result = expr_parse_term(&input);
     if (*input != '\0') {
         fprintf(stderr, "Input expression not fully consumed. Remaining: '%s'\n", input);
         exit(EXIT_FAILURE);
@@ -143,4 +144,4 @@ int main() {
     printf("Result: %.6f\n", result);
 
     return 0;
-}
+}**/
